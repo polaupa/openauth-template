@@ -77,20 +77,35 @@ export default {
 	},
 } satisfies ExportedHandler<Env>;
 
+// async function getOrCreateUser(env: Env, email: string): Promise<string> {
+// 	const result = await env.AUTH_DB.prepare(
+// 		`
+// 		INSERT INTO user (email)
+// 		VALUES (?)
+// 		ON CONFLICT (email) DO UPDATE SET email = email
+// 		RETURNING id;
+// 		`,
+// 	)
+// 		.bind(email)
+// 		.first<{ id: string }>();
+// 	if (!result) {
+// 		throw new Error(`Unable to process user: ${email}`);
+// 	}
+// 	console.log(`Found or created user ${result.id} with email ${email}`);
+// 	return result.id;
+// }
+
 async function getOrCreateUser(env: Env, email: string): Promise<string> {
-	const result = await env.AUTH_DB.prepare(
-		`
-		INSERT INTO user (email)
-		VALUES (?)
-		ON CONFLICT (email) DO UPDATE SET email = email
-		RETURNING id;
-		`,
-	)
-		.bind(email)
-		.first<{ id: string }>();
-	if (!result) {
-		throw new Error(`Unable to process user: ${email}`);
-	}
-	console.log(`Found or created user ${result.id} with email ${email}`);
-	return result.id;
+    const result = await env.AUTH_DB.prepare(
+        `SELECT id FROM user WHERE email = ?`
+    )
+        .bind(email)
+        .first<{ id: string }>();
+    
+    if (!result) {
+        throw new Error(`Access denied: user ${email} not found`);
+    }
+    
+    console.log(`User ${result.id} logged in with email ${email}`);
+    return result.id;
 }
